@@ -40,7 +40,7 @@ function App() {
             <Route path="outlets" element={<Outlets />} />
             <Route path="products" element={<Products />} />
             <Route path="users" element={<Users />} />
-            <Route path="transactions" element={<Transactions />} />
+            <Route path="transactions" element={<Transactions />} /> 
             <Route path="reports" element={<Reports />} />
           </Route>
           <Route path="*" element={<NotFound />} />
