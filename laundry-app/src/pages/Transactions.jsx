@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getAll, create } from "../utils/mockData"
+import { getAll, create, update } from "../utils/mockData"
 import { useAuth } from "../contexts/AuthContext"
-import { Plus, Trash2, X, Search, ShoppingBag } from "lucide-react"
+import { Plus, Trash2, X, Search, ShoppingBag, Edit } from "lucide-react"
 
 const Transactions = () => {
   const { hasAccess } = useAuth()
@@ -26,6 +26,26 @@ const Transactions = () => {
   const [selectedProduct, setSelectedProduct] = useState("")
   const [selectedQuantity, setSelectedQuantity] = useState(1)
   const [filteredProducts, setFilteredProducts] = useState([])
+
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [editingTransaction, setEditingTransaction] = useState(null)
+
+  // Add a function to handle status edit
+  const handleStatusEdit = (transaction) => {
+    setEditingTransaction({ ...transaction })
+    setIsStatusModalOpen(true)
+  }
+
+  // Add a function to update status
+  const updateStatus = (e) => {
+    e.preventDefault()
+    if (editingTransaction) {
+      const updatedTransaction = { ...editingTransaction }
+      update("transactions", updatedTransaction.id, updatedTransaction)
+      loadTransactions()
+      setIsStatusModalOpen(false)
+    }
+  }
 
   useEffect(() => {
     loadTransactions()
@@ -66,7 +86,13 @@ const Transactions = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setCurrentTransaction({ ...currentTransaction, [name]: value })
+
+    // Convert string IDs to numbers for customerId and outletId
+    if (name === "customerId" || name === "outletId") {
+      setCurrentTransaction({ ...currentTransaction, [name]: Number(value) })
+    } else {
+      setCurrentTransaction({ ...currentTransaction, [name]: value })
+    }
   }
 
   const addItem = () => {
@@ -139,8 +165,8 @@ const Transactions = () => {
   const openModal = () => {
     setIsModalOpen(true)
     setCurrentTransaction({
-      customerId: customers.length > 0 ? customers[0].id : "",
-      outletId: outlets.length > 0 ? outlets[0].id : "",
+      customerId: customers.length > 0 ? Number(customers[0].id) : "",
+      outletId: outlets.length > 0 ? Number(outlets[0].id) : "",
       items: [],
       total: 0,
       status: "processing",
@@ -234,6 +260,9 @@ const Transactions = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Items
                 </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -267,11 +296,20 @@ const Transactions = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {transaction.items.length} items
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleStatusEdit(transaction)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                        title="Update Status"
+                      >
+                        <Edit size={18} />
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
                     No transactions found
                   </td>
                 </tr>
@@ -481,6 +519,55 @@ const Transactions = () => {
                     Save Transaction
                   </button>
                 </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Status Edit Modal */}
+      {isStatusModalOpen && editingTransaction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+            <div className="flex justify-between items-center border-b px-6 py-4">
+              <h3 className="text-lg font-medium text-gray-900">Update Transaction Status</h3>
+              <button onClick={() => setIsStatusModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={updateStatus} className="p-6">
+              <div className="mb-4">
+                <p className="text-sm text-gray-500 mb-2">
+                  Transaction #{editingTransaction.id} - {getCustomerName(editingTransaction.customerId)}
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={editingTransaction.status}
+                  onChange={(e) => setEditingTransaction({ ...editingTransaction, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                  required
+                >
+                  <option value="processing">Processing</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsStatusModalOpen(false)}
+                  className="bg-white py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-emerald-600 py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                >
+                  Update Status
+                </button>
               </div>
             </form>
           </div>
