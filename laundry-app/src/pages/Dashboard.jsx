@@ -3,68 +3,133 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "../contexts/AuthContext"
 import { getAll } from "../utils/mockData"
-import { Users, Store, Package, ShoppingBag, TrendingUp, Clock } from "lucide-react"
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { Store, Package, ShoppingBag, TrendingUp, Clock } from "lucide-react"
+import { Link } from "react-router-dom"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts"
 
 const Dashboard = () => {
   const { currentUser } = useAuth()
   const [stats, setStats] = useState({
-    customers: 0,
+    laundryItems: 0,
     outlets: 0,
     products: 0,
     transactions: 0,
     revenue: 0,
-    pendingTransactions: 0,
+    pendingLaundry: 0,
+    unpaidLaundry: 0,
   })
-  const [monthlyData, setMonthlyData] = useState([])
-  const [categoryData, setCategoryData] = useState([])
+  const [chartData, setChartData] = useState({
+    revenueByMonth: [],
+    laundryByStatus: [],
+    serviceDistribution: [],
+  })
 
   useEffect(() => {
-    const customers = getAll("customers")
+    loadData()
+  }, [])
+
+  const loadData = () => {
+    const laundryItems = getAll("laundryItems")
     const outlets = getAll("outlets")
     const products = getAll("products")
     const transactions = getAll("transactions")
 
-    const revenue = transactions.reduce((total, transaction) => total + transaction.total, 0)
-    const pendingTransactions = transactions.filter((t) => t.status === "processing").length
+    const revenue = transactions.reduce((total, transaction) => total + transaction.amount, 0)
+    const pendingLaundry = laundryItems.filter((item) => item.processStatus === "proses").length
+    const unpaidLaundry = laundryItems.filter((item) => item.paymentStatus === "belum bayar").length
 
     setStats({
-      customers: customers.length,
+      laundryItems: laundryItems.length,
       outlets: outlets.length,
       products: products.length,
       transactions: transactions.length,
       revenue,
-      pendingTransactions,
+      pendingLaundry,
+      unpaidLaundry,
     })
 
-    // Process monthly data for charts
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    const monthly = Array(12).fill().map((_, i) => ({
-      name: monthNames[i],
-      revenue: 0,
-      transactions: 0
-    }))
+    // Prepare chart data
+    prepareChartData(laundryItems, transactions, products)
+  }
 
-    transactions.forEach(transaction => {
+  const prepareChartData = (laundryItems, transactions, products) => {
+    // Revenue by month
+    const revenueByMonth = prepareRevenueByMonthData(transactions)
+
+    // Laundry by status
+    const laundryByStatus = [
+      { name: "Proses", value: laundryItems.filter((item) => item.processStatus === "proses").length },
+      { name: "Selesai", value: laundryItems.filter((item) => item.processStatus === "selesai").length },
+      { name: "Batal", value: laundryItems.filter((item) => item.processStatus === "batal").length },
+    ]
+
+    // Service distribution
+    const serviceDistribution = prepareServiceDistributionData(laundryItems, products)
+
+    setChartData({
+      revenueByMonth,
+      laundryByStatus,
+      serviceDistribution,
+    })
+  }
+
+  const prepareRevenueByMonthData = (transactions) => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    const currentYear = new Date().getFullYear()
+
+    // Initialize data for all months with 0
+    const monthlyData = months.map((month) => ({ name: month, revenue: 0 }))
+
+    // Fill in actual data
+    transactions.forEach((transaction) => {
       const date = new Date(transaction.date)
-      const month = date.getMonth()
-      monthly[month].revenue += transaction.total
-      monthly[month].transactions += 1
-    })
-
-    setMonthlyData(monthly)
-
-    // Process category data
-    const categories = {}
-    products.forEach(product => {
-      if (!categories[product.category]) {
-        categories[product.category] = { name: product.category, count: 0 }
+      if (date.getFullYear() === currentYear) {
+        const monthIndex = date.getMonth()
+        monthlyData[monthIndex].revenue += transaction.amount
       }
-      categories[product.category].count += 1
     })
 
-    setCategoryData(Object.values(categories))
-  }, [])
+    return monthlyData
+  }
+
+  const prepareServiceDistributionData = (laundryItems, products) => {
+    // Count occurrences of each service
+    const serviceCounts = {}
+
+    laundryItems.forEach((item) => {
+      const serviceId = item.serviceId
+      if (!serviceCounts[serviceId]) {
+        serviceCounts[serviceId] = 0
+      }
+      serviceCounts[serviceId]++
+    })
+
+    // Convert to chart data format
+    return Object.keys(serviceCounts)
+      .map((serviceId) => {
+        const product = products.find((p) => p.id === Number(serviceId))
+        return {
+          name: product ? product.name : `Service ${serviceId}`,
+          value: serviceCounts[serviceId],
+        }
+      })
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5) // Top 5 services
+  }
+
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"]
 
   const StatCard = ({ title, value, icon, color }) => (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -82,18 +147,18 @@ const Dashboard = () => {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <p className="text-gray-600">Welcome back, {currentUser?.name || "User"}!</p>
+        <p className="text-gray-600">Welcome back, {currentUser.name}!</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <StatCard
-          title="Total Customers"
-          value={stats.customers}
-          icon={<Users size={24} className="text-blue-600" />}
+          title="Total Laundry Items"
+          value={stats.laundryItems}
+          icon={<Package size={24} className="text-blue-600" />}
           color="bg-blue-100"
         />
 
-        {currentUser?.role === "admin" && (
+        {currentUser.role === "admin" && (
           <>
             <StatCard
               title="Total Outlets"
@@ -111,7 +176,7 @@ const Dashboard = () => {
           </>
         )}
 
-        {(currentUser?.role === "admin" || currentUser?.role === "kasir") && (
+        {(currentUser.role === "admin" || currentUser.role === "petugas") && (
           <StatCard
             title="Total Transactions"
             value={stats.transactions}
@@ -128,100 +193,110 @@ const Dashboard = () => {
         />
 
         <StatCard
-          title="Pending Orders"
-          value={stats.pendingTransactions}
-          icon={<Clock size={24} className="text-red-600" />}
+          title="Pending Laundry"
+          value={stats.pendingLaundry}
+          icon={<Clock size={24} className="text-orange-600" />}
+          color="bg-orange-100"
+        />
+
+        <StatCard
+          title="Unpaid Laundry"
+          value={stats.unpaidLaundry}
+          icon={<ShoppingBag size={24} className="text-red-600" />}
           color="bg-red-100"
         />
       </div>
 
-      {/* Chart Section */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Revenue Chart */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold mb-4">Monthly Revenue</h2>
-          <div className="h-64">
+          <h2 className="text-lg font-semibold mb-4">Revenue by Month (This Year)</h2>
+          <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={monthlyData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
+              <BarChart data={chartData.revenueByMonth} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip formatter={(value) => `Rp ${value.toLocaleString()}`} />
+                <Tooltip formatter={(value) => [`Rp ${value.toLocaleString()}`, "Revenue"]} />
                 <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Transactions Chart */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold mb-4">Monthly Transactions</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={monthlyData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="transactions" fill="#22c55e" />
+                <Bar dataKey="revenue" fill="#10b981" name="Revenue" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Product Categories Chart */}
-        {currentUser?.role === "admin" && (
-          <div className="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
-            <h2 className="text-lg font-semibold mb-4">Product Categories</h2>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={categoryData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  layout="vertical"
+        {/* Laundry Status Chart */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-4">Laundry Status Distribution</h2>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData.laundryByStatus}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={true}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  nameKey="name"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={150} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="count" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                  {chartData.laundryByStatus.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => [value, "Count"]} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="mt-8 bg-white rounded-lg shadow-md p-6">
+      {/* Top Services Chart */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 className="text-lg font-semibold mb-4">Top 5 Services</h2>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData.serviceDistribution}
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="name" width={150} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#8884d8" name="Orders" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(currentUser?.role === "admin" || currentUser?.role === "kasir") ? (
+          {currentUser.role === "admin" || currentUser.role === "petugas" ? (
             <>
-              <a href="/customers" className="p-4 border rounded-lg hover:bg-gray-50 flex items-center space-x-3">
-                <Users size={20} className="text-blue-600" />
-                <span>Manage Customers</span>
-              </a>
+              <Link to="/laundry-items" className="p-4 border rounded-lg hover:bg-gray-50 flex items-center space-x-3">
+                <Package size={20} className="text-blue-600" />
+                <span>Manage Laundry Items</span>
+              </Link>
 
-              <a href="/transactions" className="p-4 border rounded-lg hover:bg-gray-50 flex items-center space-x-3">
+              <Link to="/transactions" className="p-4 border rounded-lg hover:bg-gray-50 flex items-center space-x-3">
                 <ShoppingBag size={20} className="text-green-600" />
-                <span>New Transaction</span>
-              </a>
+                <span>View Transactions</span>
+              </Link>
             </>
           ) : null}
 
-          <a href="/reports" className="p-4 border rounded-lg hover:bg-gray-50 flex items-center space-x-3">
+          <Link to="/reports" className="p-4 border rounded-lg hover:bg-gray-50 flex items-center space-x-3">
             <TrendingUp size={20} className="text-emerald-600" />
             <span>View Reports</span>
-          </a>
+          </Link>
         </div>
       </div>
     </div>

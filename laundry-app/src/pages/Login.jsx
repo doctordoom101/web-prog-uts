@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useNavigate, useLocation, Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import { Search } from "lucide-react"
 
 const Login = () => {
   const [username, setUsername] = useState("")
@@ -37,7 +38,7 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Laundry App</h2>
@@ -96,9 +97,16 @@ const Login = () => {
 
           <div className="text-sm text-center">
             <p className="text-gray-600">Demo accounts:</p>
-            <p className="text-gray-500 mt-1">admin / admin123 | kasir / kasir123 | owner / owner123</p>
+            <p className="text-gray-500 mt-1">admin / admin123 | petugas / petugas123 | owner / owner123</p>
           </div>
         </form>
+      </div>
+
+      <div className="mt-6 text-center">
+        <Link to="/track" className="flex items-center justify-center text-emerald-600 hover:text-emerald-700">
+          <Search size={18} className="mr-2" />
+          <span>Track your laundry status</span>
+        </Link>
       </div>
     </div>
   )

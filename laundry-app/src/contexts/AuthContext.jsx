@@ -40,14 +40,14 @@ export const AuthProvider = ({ children }) => {
     if (!currentUser) return false
 
     const accessMap = {
-      login: ["admin", "kasir", "owner"],
-      logout: ["admin", "kasir", "owner"],
-      customers: ["admin", "kasir"],
+      login: ["admin", "petugas", "owner"],
+      logout: ["admin", "petugas", "owner"],
+      laundryItems: ["admin", "petugas"],
       outlets: ["admin"],
       products: ["admin"],
       users: ["admin"],
-      transactions: ["admin", "kasir"],
-      reports: ["admin", "kasir", "owner"],
+      transactions: ["admin", "petugas"],
+      reports: ["admin", "petugas", "owner"],
     }
 
     return accessMap[feature]?.includes(currentUser.role) || false

@@ -6,13 +6,14 @@ import { AuthProvider } from "./contexts/AuthContext"
 import Layout from "./components/Layout"
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
-import Customers from "./pages/Customers"
+import LaundryItems from "./pages/LaundryItems"
 import Outlets from "./pages/Outlets"
 import Products from "./pages/Products"
 import Users from "./pages/Users"
 import Transactions from "./pages/Transactions"
 import Reports from "./pages/Reports"
 import NotFound from "./pages/NotFound"
+import CustomerTrack from "./pages/CustomerTrack"
 import { initializeData } from "./utils/mockData"
 
 function App() {
@@ -33,14 +34,15 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/track" element={<CustomerTrack />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="customers" element={<Customers />} />
+            <Route path="laundry-items" element={<LaundryItems />} />
             <Route path="outlets" element={<Outlets />} />
             <Route path="products" element={<Products />} />
             <Route path="users" element={<Users />} />
-            <Route path="transactions" element={<Transactions />} /> 
+            <Route path="transactions" element={<Transactions />} />
             <Route path="reports" element={<Reports />} />
           </Route>
           <Route path="*" element={<NotFound />} />

@@ -9,7 +9,7 @@ const Users = () => {
   const { hasAccess, currentUser } = useAuth()
   const [users, setUsers] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [currentUserData, setCurrentUserData] = useState({ name: "", username: "", password: "", role: "kasir" })
+  const [currentUserData, setCurrentUserData] = useState({ name: "", username: "", password: "", role: "petugas" })
   const [isEditing, setIsEditing] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -64,7 +64,7 @@ const Users = () => {
   const openModal = () => {
     setIsModalOpen(true)
     setIsEditing(false)
-    setCurrentUserData({ name: "", username: "", password: "", role: "kasir" })
+    setCurrentUserData({ name: "", username: "", password: "", role: "petugas" })
   }
 
   const closeModal = () => {
@@ -152,7 +152,7 @@ const Users = () => {
                         className={`px-2 py-1 rounded-full text-xs ${
                           user.role === "admin"
                             ? "bg-purple-100 text-purple-800"
-                            : user.role === "kasir"
+                            : user.role === "petugas"
                               ? "bg-blue-100 text-blue-800"
                               : "bg-yellow-100 text-yellow-800"
                         }`}
@@ -246,7 +246,7 @@ const Users = () => {
                   required
                 >
                   <option value="admin">Admin</option>
-                  <option value="kasir">Kasir</option>
+                  <option value="petugas">Petugas Laundry</option>
                   <option value="owner">Owner</option>
                 </select>
               </div>

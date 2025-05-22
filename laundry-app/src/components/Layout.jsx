@@ -3,7 +3,7 @@
 import { Outlet, useNavigate, Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 import { useState } from "react"
-import { Home, Users, Package, Store, ShoppingBag, FileText, LogOut, Menu, X, User } from "lucide-react"
+import { Home, User, Package, Store, ShoppingBag, FileText, LogOut, Menu, X } from "lucide-react"
 
 const Layout = () => {
   const { currentUser, logout, hasAccess } = useAuth()
@@ -26,7 +26,7 @@ const Layout = () => {
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: <Home size={20} />, access: true },
-    { name: "Customers", path: "/customers", icon: <Users size={20} />, access: hasAccess("customers") },
+    { name: "Laundry Items", path: "/laundry-items", icon: <Package size={20} />, access: hasAccess("laundryItems") },
     { name: "Outlets", path: "/outlets", icon: <Store size={20} />, access: hasAccess("outlets") },
     { name: "Products", path: "/products", icon: <Package size={20} />, access: hasAccess("products") },
     { name: "Users", path: "/users", icon: <User size={20} />, access: hasAccess("users") },

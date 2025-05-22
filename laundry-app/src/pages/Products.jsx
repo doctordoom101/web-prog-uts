@@ -10,7 +10,7 @@ const Products = () => {
   const [products, setProducts] = useState([])
   const [outlets, setOutlets] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [currentProduct, setCurrentProduct] = useState({ name: "", price: "", outletId: "" })
+  const [currentProduct, setCurrentProduct] = useState({ name: "", price: "", outletId: "", type: "kiloan" })
   const [isEditing, setIsEditing] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -66,7 +66,7 @@ const Products = () => {
   const openModal = () => {
     setIsModalOpen(true)
     setIsEditing(false)
-    setCurrentProduct({ name: "", price: "", outletId: outlets.length > 0 ? outlets[0].id : "" })
+    setCurrentProduct({ name: "", price: "", outletId: outlets.length > 0 ? outlets[0].id : "", type: "kiloan" })
   }
 
   const closeModal = () => {
@@ -81,7 +81,8 @@ const Products = () => {
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getOutletName(product.outletId).toLowerCase().includes(searchTerm.toLowerCase()),
+      getOutletName(product.outletId).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.type.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   if (!hasAccess("products")) {
@@ -131,6 +132,7 @@ const Products = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Price
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Outlet
                 </th>
@@ -148,6 +150,7 @@ const Products = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       Rp {product.price.toLocaleString()}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{product.type}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {getOutletName(product.outletId)}
                     </td>
@@ -166,7 +169,7 @@ const Products = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
                     No products found
                   </td>
                 </tr>
@@ -211,6 +214,20 @@ const Products = () => {
                   required
                   min="0"
                 />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <select
+                  name="type"
+                  value={currentProduct.type}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                  required
+                >
+                  <option value="kiloan">Kiloan</option>
+                  <option value="satuan">Satuan</option>
+                </select>
               </div>
 
               <div className="mb-4">
